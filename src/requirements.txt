@@ -1,0 +1,9 @@
+hydra-core
+jax[cuda12_pip]
+numpy
+optax
+orbax-checkpoint
+Pillow
+flax
+omegaconf
+datasets

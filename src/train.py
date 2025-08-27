@@ -19,7 +19,8 @@ import logging
 
 log = logging.getLogger(__name__)
 
-# @partial(jax.jit, static_argnums=(2,))
+
+@partial(jax.jit, static_argnums=(2,))
 def train_step(state: TrainState, batch: Tuple[jnp.ndarray, jnp.ndarray], num_classes: int,
                gauss_newton: float = None) -> Tuple[TrainState, jnp.ndarray, jnp.ndarray]:
     """
@@ -34,6 +35,7 @@ def train_step(state: TrainState, batch: Tuple[jnp.ndarray, jnp.ndarray], num_cl
     Returns:
         A tuple of (updated_state, loss, accuracy).
     """
+
     @jax.jit
     def cross_entropy_loss(params, batch: jnp.ndarray) -> tuple[Array, tuple[Any, Array]]:
         """
@@ -59,11 +61,10 @@ def train_step(state: TrainState, batch: Tuple[jnp.ndarray, jnp.ndarray], num_cl
     )(state.params, batch)
 
     # This is not that optimized; but it's okay
-    if gauss_newton:
-        print(f'Doing Gauss Newton')
+    if gauss_newton is not None:
         bsz = len(batch[0])
         jacobian = jax.jacobian(
-            lambda p: state.apply_fn({'params': p},  batch[0])
+            lambda p: state.apply_fn({'params': p}, batch[0])
         )(state.params)
         flattened, _ = jax.tree.flatten(
             jacobian
@@ -72,17 +73,16 @@ def train_step(state: TrainState, batch: Tuple[jnp.ndarray, jnp.ndarray], num_cl
         reshaped_leaves = [leaf.reshape(
             bsz * num_classes, 1, -1) for leaf in flattened]
         aggregated_array = jnp.concatenate(reshaped_leaves, axis=-1)
-        J = aggregated_array.reshape((bsz * num_classes, -1))
-        print(J.shape)
+        jacobian = aggregated_array.reshape((bsz * num_classes, -1))
 
         # Generalized Gauss-Newton is J^THJ
         probs = jax.nn.softmax(logits, axis=-1).flatten()
         diag_probs = jnp.diag(probs)
         outer_probs = jnp.outer(probs, probs)
-        H = diag_probs - outer_probs
+        h_mat = diag_probs - outer_probs
 
         flattened, back = jax.flatten_util.ravel_pytree(grads)
-        altered = jnp.linalg.solve(J.T @ H @ J + 0.1 *  jnp.eye(J.shape[1]), flattened)
+        altered = jnp.linalg.solve(jacobian.T @ h_mat @ jacobian + 0.1 * jnp.eye(jacobian.shape[1]), flattened)
         grads = back(altered)
 
     # Compute the parameter updates using the optimizer and apply them
@@ -142,6 +142,7 @@ def get_datasets():
         'test': test_datasets
     }
 
+
 def get_cifar10_datasets():
     """
     Loads and prepares the CIFAR-10 dataset using the 'datasets' library,
@@ -194,6 +195,7 @@ def get_cifar10_datasets():
         'test': test_datasets
     }
 
+
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def train(cfg: DictConfig):
     """
@@ -204,6 +206,7 @@ def train(cfg: DictConfig):
     """
     log.info(OmegaConf.to_yaml(cfg))
     log.info(f"Output directory: {hydra.core.hydra_config.HydraConfig.get().runtime.output_dir}")
+    log.info(f"Using {jax.default_backend()}")
 
     # Get a JAX PRNGKey for reproducibility
     key = jax.random.PRNGKey(cfg.seed)
@@ -231,7 +234,7 @@ def train(cfg: DictConfig):
     # Load the datasets
     if cfg.data.name == 'cifar10':
         datasets = get_cifar10_datasets()
-    elif cfg.data.name =='mnist':
+    elif cfg.data.name == 'mnist':
         datasets = get_datasets()
     else:
         raise ValueError(f"Unknown dataset: {cfg.data.name}.")
@@ -307,9 +310,9 @@ def train(cfg: DictConfig):
         train_losses[epoch] = epoch_loss / avg_loss
 
         log.info(f"Epoch {epoch + 1}/{cfg.training.epochs} | "
-              f"Loss: {avg_loss:.4f} | "
-              f"Train Accuracy: {avg_accuracy:.4f} | "
-              f"Test Accuracy: {test_accuracies[epoch] :.4f}")
+                 f"Loss: {avg_loss:.4f} | "
+                 f"Train Accuracy: {avg_accuracy:.4f} | "
+                 f"Test Accuracy: {test_accuracies[epoch] :.4f}")
 
     log.info("Training finished.")
 
