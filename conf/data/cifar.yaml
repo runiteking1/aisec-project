@@ -1,0 +1,4 @@
+# Dataset parameters/Poison parameters
+name: cifar10
+image_size: 32
+channels: 3

@@ -1,0 +1,4 @@
+# Dataset parameters/Poison parameters
+name: mnist
+image_size: 28
+channels: 1

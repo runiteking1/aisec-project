@@ -1,0 +1,9 @@
+defaults:
+  - training: default
+  - model: default
+  - data: default
+  - _self_
+
+# Global experiment settings
+experiment_name: "mnist_adv"
+seed: 42

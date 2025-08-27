@@ -1,0 +1,12 @@
+defaults:
+  - data: default
+  - _self_
+
+# Adversarial
+epsilon: .1
+batch_size: 256
+output_images: 10
+
+# Global experiment settings
+experiment_name: "mnist_adv"
+seed: 42

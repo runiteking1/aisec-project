@@ -1,0 +1,18 @@
+# A simple configuration for the CNN model.
+# The parameters in this file define the model's architecture.
+
+# The list of features for each convolutional layer.
+# This corresponds to the number of convolutional layers and their output depth.
+#features_per_layer: [32, 64]
+features_per_layer: [4, 4]
+
+# The kernel size for all convolutional layers.
+kernel_size: [3, 3]
+
+# The list of features for the hidden dense layers.
+# Add more values to this list to add more dense layers.
+#dense_features: [256]
+dense_features: [8]
+
+# The number of output classes, which should match your dataset.
+num_classes: 10
