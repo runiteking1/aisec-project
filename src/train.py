@@ -5,6 +5,7 @@ import jax
 import os
 
 import numpy as np
+from matplotlib import pyplot as plt
 import optax
 import hydra
 from jax import Array
@@ -82,7 +83,8 @@ def train_step(state: TrainState, batch: Tuple[jnp.ndarray, jnp.ndarray], num_cl
         h_mat = diag_probs - outer_probs
 
         flattened, back = jax.flatten_util.ravel_pytree(grads)
-        altered = jnp.linalg.solve(jacobian.T @ h_mat @ jacobian + 0.1 * jnp.eye(jacobian.shape[1]), flattened)
+        altered = jnp.linalg.solve(jacobian.T @ h_mat @ jacobian + gauss_newton * jnp.eye(jacobian.shape[1]),
+                                   flattened)
         grads = back(altered)
 
     # Compute the parameter updates using the optimizer and apply them
@@ -143,7 +145,7 @@ def get_datasets():
     }
 
 
-def get_cifar10_datasets():
+def get_cifar10_datasets(num_classes: int = None):
     """
     Loads and prepares the CIFAR-10 dataset using the 'datasets' library,
     saving the processed data and loading it if it already exists.
@@ -153,9 +155,22 @@ def get_cifar10_datasets():
 
     # Check if the processed dataset files exist
     if os.path.exists(processed_train_path) and os.path.exists(processed_test_path):
-        log.info("✅ Processed CIFAR-10 datasets found. Loading from disk...")
+        log.info(f"✅ Processed CIFAR-10 datasets found. Loading from disk with {num_classes} classes...")
         train_data = jnp.load(processed_train_path, allow_pickle=True).item()
         test_data = jnp.load(processed_test_path, allow_pickle=True).item()
+
+        train_mask = jnp.array(train_data['label']) < num_classes
+        test_mask = jnp.array(test_data['label']) < num_classes
+
+        train_data = {
+            'image': jnp.array(train_data['image'])[train_mask],
+            'label': jnp.array(train_data['label'])[train_mask]
+        }
+        test_data = {
+            'image': jnp.array(test_data['image'])[test_mask],
+            'label': jnp.array(test_data['label'])[test_mask]
+        }
+        
         return {
             'train': train_data,
             'test': test_data
@@ -176,13 +191,16 @@ def get_cifar10_datasets():
     train_ds = cifar10_ds['train']
     test_ds = cifar10_ds['test']
 
+    train_mask = jnp.array(train_ds['label']) < num_classes
+    test_mask = jnp.array(test_ds['label']) < num_classes
+
     train_datasets = {
-        'image': jnp.array(train_ds['image']),
-        'label': jnp.array(train_ds['label'])
+        'image': jnp.array(train_ds['image'])[train_mask],
+        'label': jnp.array(train_ds['label'])[train_mask]
     }
     test_datasets = {
-        'image': jnp.array(test_ds['image']),
-        'label': jnp.array(test_ds['label'])
+        'image': jnp.array(test_ds['image'])[test_mask],
+        'label': jnp.array(test_ds['label'])[test_mask]
     }
 
     # Save the processed datasets as .npy files
@@ -194,6 +212,44 @@ def get_cifar10_datasets():
         'train': train_datasets,
         'test': test_datasets
     }
+
+
+def plot_training_metrics(train_accuracies, train_losses, test_accuracies, batch_per_epoch, output_dir):
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # Plot Training Losses on the primary Y-axis
+    color = 'tab:red'
+    ax1.set_xlabel('Batch')
+    ax1.set_ylabel('Loss', color=color)
+    ax1.plot(range(1, len(train_losses) + 1), train_losses, color=color, label='Train Loss')
+    ax1.tick_params(axis='y', labelcolor=color)
+
+    # Create a secondary Y-axis for Test Accuracies
+    ax2 = ax1.twinx()
+    color = 'tab:blue'
+    ax2.set_ylabel('Accuracy', color=color)
+    ax2.plot(range(1, len(train_accuracies) + 1), train_accuracies, color=color, label='Test Accuracy')
+    ax2.plot(
+        np.arange(1, len(test_accuracies) + 1) * batch_per_epoch, test_accuracies, 'o-', color='g',
+        linewidth=4.0, markersize=10.0,
+        label='Test Accuracy'
+    )
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    # Add a title and combine legends
+    fig.suptitle('Training Progress: Loss and Accuracy per Batch')
+    lines, labels = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(lines + lines2, labels + labels2, loc='best')
+
+    # Ensure the plot is saved before being displayed
+    plot_path = os.path.join(output_dir, "training_metrics.png")
+    plt.tight_layout()
+    plt.savefig(plot_path)
+    print(f"Plot saved to {plot_path}")
+
+    # Display the plot
+    plt.show()
 
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
@@ -216,7 +272,7 @@ def train(cfg: DictConfig):
         features_per_layer=tuple(cfg.model.features_per_layer),
         kernel_size=tuple(cfg.model.kernel_size),
         dense_features=tuple(cfg.model.dense_features),
-        num_classes=cfg.model.num_classes
+        num_classes=cfg.data.num_classes
     )
 
     # Dynamically select the optimizer based on the config file
@@ -233,7 +289,7 @@ def train(cfg: DictConfig):
 
     # Load the datasets
     if cfg.data.name == 'cifar10':
-        datasets = get_cifar10_datasets()
+        datasets = get_cifar10_datasets(cfg.data.num_classes)
     elif cfg.data.name == 'mnist':
         datasets = get_datasets()
     else:
@@ -259,9 +315,12 @@ def train(cfg: DictConfig):
     num_train_samples = len(train_ds['image'])
     num_test_samples = len(test_ds['image'])
     batch_size = cfg.training.batch_size
+    log.info(f'Num train {num_train_samples}; Num test {num_test_samples}; Number of steps per epoch: {num_train_samples // batch_size}')
 
     test_accuracies = np.zeros(cfg.training.epochs)
     train_losses = np.zeros(cfg.training.epochs)
+    all_batch_losses = []
+    all_batch_accuracies = []
     for epoch in range(cfg.training.epochs):
         # Split the key for shuffling
         key, subkey = jax.random.split(key)
@@ -283,6 +342,9 @@ def train(cfg: DictConfig):
 
             # Call the JIT-compiled train step
             state, loss, accuracy = train_step(state, batch, 10, gauss_newton=gn_param)
+
+            all_batch_losses.append(loss)
+            all_batch_accuracies.append(accuracy)
 
             epoch_loss += loss
             epoch_accuracy += accuracy
@@ -316,6 +378,21 @@ def train(cfg: DictConfig):
 
     log.info("Training finished.")
 
+    # Saving training statistics
+    output_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    metrics_file_path = os.path.join(output_dir, 'training_metrics.npz')
+    np.savez_compressed(
+        metrics_file_path,
+        batch_losses=np.array(all_batch_losses),
+        batch_accuracies=np.array(all_batch_accuracies),
+        test_accuracies=test_accuracies,
+        train_losses=train_losses
+    )
+    plot_training_metrics(np.array(all_batch_accuracies), np.array(all_batch_losses), test_accuracies,
+                          num_train_samples // batch_size,
+                          output_dir
+    )
+
     # Instantiate the Orbax Checkpointer. The PyTreeCheckpointer is a general-purpose choice.
     checkpointer = ocp.PyTreeCheckpointer()
 
@@ -331,7 +408,7 @@ def train(cfg: DictConfig):
     }
 
     # Convert the relative path to an absolute path
-    checkpoint_path = os.path.join(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir, 'checkpoint', 'model')
+    checkpoint_path = os.path.join(output_dir, 'checkpoint', 'model')
 
     # Use Orbax's save method with the absolute path.
     checkpointer.save(checkpoint_path, item=target_to_save)

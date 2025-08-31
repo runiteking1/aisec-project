@@ -1,7 +1,7 @@
 defaults:
   - training: default
   - model: default
-  - data: default
+  - data: mnist
   - _self_
 
 # Global experiment settings

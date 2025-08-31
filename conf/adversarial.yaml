@@ -1,11 +1,15 @@
 defaults:
-  - data: default
+  - data: mnist
   - _self_
 
 # Adversarial
 epsilon: .1
 batch_size: 256
 output_images: 10
+checkpoint_path: 'ERROR' # This must be set individually
+#checkpoint_path: "/home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model"
+#checkpoint_path: "/home/marshall/Documents/aisec-project/src/outputs/2025-08-30/20-41-21/checkpoint/model"
+#checkpoint_path: "/home/marshall/Documents/aisec-project/src/outputs/2025-08-30/20-56-13/checkpoint/model"
 
 # Global experiment settings
 experiment_name: "mnist_adv"

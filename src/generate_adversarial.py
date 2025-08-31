@@ -91,7 +91,7 @@ def train_adversarial(cfg: DictConfig) -> None:
     log.info(f"Output directory: {hydra.core.hydra_config.HydraConfig.get().runtime.output_dir}")
 
     # Load the model first; should make this in Hydra; but for now hard code
-    checkpoint_path = '/home/marshall/PycharmProjects/AISEC-project/src/outputs/2025-08-21/21-50-45/checkpoints/model'
+    checkpoint_path = cfg.checkpoint_path
     checkpointer = ocp.Checkpointer(ocp.PyTreeCheckpointHandler())
     restored = checkpointer.restore(checkpoint_path)
     state = restored['state']
@@ -102,7 +102,7 @@ def train_adversarial(cfg: DictConfig) -> None:
         features_per_layer=tuple(model_config.model.features_per_layer),
         kernel_size=tuple(model_config.model.kernel_size),
         dense_features=tuple(model_config.model.dense_features),
-        num_classes=model_config.model.num_classes
+        num_classes=cfg.data.num_classes
     )
 
     # Create state for easy porting; but no optimizer needed
