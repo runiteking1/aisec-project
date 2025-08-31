@@ -1,0 +1,71 @@
+[2025-08-30 19:48:19,064][__main__][INFO] - training:
+  epochs: 15
+  batch_size: 128
+  learning_rate: 0.001
+  optimizer: adam
+  early_stopping: true
+model:
+  features_per_layer:
+  - 4
+  - 8
+  kernel_size:
+  - 3
+  - 3
+  dense_features:
+  - 16
+data:
+  name: mnist
+  image_size: 28
+  channels: 1
+  num_classes: 10
+experiment_name: mnist_adv
+seed: 42
+
+[2025-08-30 19:48:19,064][__main__][INFO] - Output directory: /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19
+[2025-08-30 19:48:19,148][jax._src.xla_bridge][INFO] - Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+[2025-08-30 19:48:19,226][__main__][INFO] - Using gpu
+[2025-08-30 19:48:19,335][__main__][INFO] - ✅ Processed datasets found. Loading from disk...
+[2025-08-30 19:48:21,052][__main__][INFO] - Starting training...
+[2025-08-30 19:48:21,052][__main__][INFO] - Total number of parameters: 6794
+[2025-08-30 19:48:21,052][__main__][INFO] - Num train 60000; Num test 10000; Number of steps per epoch: 468
+[2025-08-30 19:48:25,708][__main__][INFO] - Epoch 1/15 | Loss: 0.5772 | Train Accuracy: 0.8267 | Test Accuracy: 0.9332
+[2025-08-30 19:48:26,804][__main__][INFO] - Epoch 2/15 | Loss: 0.2041 | Train Accuracy: 0.9403 | Test Accuracy: 0.9492
+[2025-08-30 19:48:27,936][__main__][INFO] - Epoch 3/15 | Loss: 0.1537 | Train Accuracy: 0.9552 | Test Accuracy: 0.9631
+[2025-08-30 19:48:29,000][__main__][INFO] - Epoch 4/15 | Loss: 0.1297 | Train Accuracy: 0.9622 | Test Accuracy: 0.9664
+[2025-08-30 19:48:30,065][__main__][INFO] - Epoch 5/15 | Loss: 0.1143 | Train Accuracy: 0.9662 | Test Accuracy: 0.9671
+[2025-08-30 19:48:31,136][__main__][INFO] - Epoch 6/15 | Loss: 0.1054 | Train Accuracy: 0.9686 | Test Accuracy: 0.9724
+[2025-08-30 19:48:32,200][__main__][INFO] - Epoch 7/15 | Loss: 0.0988 | Train Accuracy: 0.9706 | Test Accuracy: 0.9730
+[2025-08-30 19:48:33,249][__main__][INFO] - Epoch 8/15 | Loss: 0.0908 | Train Accuracy: 0.9728 | Test Accuracy: 0.9760
+[2025-08-30 19:48:34,289][__main__][INFO] - Epoch 9/15 | Loss: 0.0875 | Train Accuracy: 0.9737 | Test Accuracy: 0.9751
+[2025-08-30 19:48:35,380][__main__][INFO] - Epoch 10/15 | Loss: 0.0813 | Train Accuracy: 0.9748 | Test Accuracy: 0.9770
+[2025-08-30 19:48:36,517][__main__][INFO] - Epoch 11/15 | Loss: 0.0776 | Train Accuracy: 0.9761 | Test Accuracy: 0.9725
+[2025-08-30 19:48:37,778][__main__][INFO] - Epoch 12/15 | Loss: 0.0736 | Train Accuracy: 0.9768 | Test Accuracy: 0.9781
+[2025-08-30 19:48:38,882][__main__][INFO] - Epoch 13/15 | Loss: 0.0709 | Train Accuracy: 0.9778 | Test Accuracy: 0.9799
+[2025-08-30 19:48:39,956][__main__][INFO] - Epoch 14/15 | Loss: 0.0675 | Train Accuracy: 0.9792 | Test Accuracy: 0.9795
+[2025-08-30 19:48:41,024][__main__][INFO] - Epoch 15/15 | Loss: 0.0645 | Train Accuracy: 0.9800 | Test Accuracy: 0.9778
+[2025-08-30 19:48:41,024][__main__][INFO] - Training finished.
+[2025-08-30 19:48:41,712][absl][INFO] - orbax-checkpoint version: 0.11.23
+[2025-08-30 19:48:41,712][absl][INFO] - Created BasePyTreeCheckpointHandler: use_ocdbt=True, use_zarr3=False, pytree_metadata_options=PyTreeMetadataOptions(support_rich_types=False), array_metadata_store=<orbax.checkpoint._src.metadata.array_metadata_store.Store object at 0x7fe98f31ec20>, enable_pinned_host_transfer=True, save_concurrent_bytes: 96000000000 (89.4 GiB), restore_concurrent_bytes: 96000000000 (89.4 GiB)
+[2025-08-30 19:48:41,712][absl][INFO] - [thread=MainThread] Failed to get flag value for EXPERIMENTAL_ORBAX_USE_DISTRIBUTED_PROCESS_ID.
+[2025-08-30 19:48:41,712][absl][INFO] - [process=0] Started saving checkpoint to /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model.
+[2025-08-30 19:48:41,713][absl][INFO] - Creating tmp directory /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model.orbax-checkpoint-tmp
+[2025-08-30 19:48:41,713][absl][INFO] - Wrote Metadata={'item_handlers': None, 'metrics': {}, 'performance_metrics': {}, 'init_timestamp_nsecs': 1756604921713716325, 'commit_timestamp_nsecs': None, 'custom_metadata': {}}, json={"item_handlers": null, "metrics": {}, "performance_metrics": {}, "init_timestamp_nsecs": 1756604921713716325, "commit_timestamp_nsecs": null, "custom_metadata": {}} to /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model.orbax-checkpoint-tmp/_CHECKPOINT_METADATA
+[2025-08-30 19:48:41,715][absl][INFO] - Using ThreadSafeKeyValueSignalingClient
+[2025-08-30 19:48:41,716][absl][INFO] - [process=0][thread=MainThread] Initiated "orbax.checkpoint._src.serialization.type_handlers.ScalarHandler".serialize. Time taken: 0.000179s
+[2025-08-30 19:48:41,717][absl][INFO] - [process=0][thread=MainThread] Initiated "orbax.checkpoint._src.serialization.type_handlers.StringHandler".serialize. Time taken: 0.001323s
+[2025-08-30 19:48:41,717][absl][INFO] - [process=0][thread=MainThread] Initiated "orbax.checkpoint._src.serialization.type_handlers.ScalarHandler".serialize. Time taken: 0.000391s
+[2025-08-30 19:48:41,718][absl][INFO] - Transferring arrays to host memory with options: use_replica_parallel=True, min_slice_bytes_for_replica_parallel=None, max_replicas_for_replica_parallel=None, enable_pinned_host_transfer=True
+[2025-08-30 19:48:41,722][absl][INFO] - [process=0][thread=MainThread] Initiated "orbax.checkpoint._src.serialization.type_handlers.ArrayHandler".serialize. Time taken: 0.004087s
+[2025-08-30 19:48:41,722][absl][INFO] - [process=0] /jax/checkpoint/write/blocking_gbytes_per_sec: 0 Bytes/s (total gbytes: 80.0 KiB) (time elapsed: 8 milliseconds) (per-host)
+[2025-08-30 19:48:41,722][absl][INFO] - [process=0][thread=MainThread] Initiated Pytree async_save. Time taken: 0.008557s (batch_requests_ready=0.000957s, total_serialization_initiated=0.007198s, others=0.000403s)
+[2025-08-30 19:48:41,729][absl][INFO] - [process=0][thread=array_type_handler] Wrote 26 array_metadata.ArrayMetadata to /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model.orbax-checkpoint-tmp/array_metadatas/process_0
+[2025-08-30 19:48:41,741][absl][INFO] - [process=0][thread=write_metadata_after_commits] Commit + Array metadata written. Time taken: 0.019217s (commit=0.017885s, array_metadata_write=0.001331s)
+[2025-08-30 19:48:41,742][absl][INFO] - [process=0] /jax/checkpoint/write/gbytes_per_sec: 0 Bytes/s (total gbytes: 80.0 KiB) (time elapsed: 27 milliseconds) (per-host)
+[2025-08-30 19:48:41,742][absl][INFO] - Read Metadata={'item_handlers': None, 'metrics': {}, 'performance_metrics': {}, 'init_timestamp_nsecs': 1756604921713716325, 'commit_timestamp_nsecs': None, 'custom_metadata': {}} from /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model.orbax-checkpoint-tmp/_CHECKPOINT_METADATA
+[2025-08-30 19:48:41,742][absl][INFO] - Updated Metadata={'item_handlers': 'orbax.checkpoint._src.handlers.pytree_checkpoint_handler.PyTreeCheckpointHandler', 'metrics': {}, 'performance_metrics': {}, 'init_timestamp_nsecs': 1756604921713716325, 'commit_timestamp_nsecs': None, 'custom_metadata': {}} to /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model.orbax-checkpoint-tmp/_CHECKPOINT_METADATA
+[2025-08-30 19:48:41,743][absl][INFO] - [process=0][thread=MainThread] Skipped cross-host ArrayMetadata validation because only one process is found: process_index=0.
+[2025-08-30 19:48:41,746][absl][INFO] - [process=0][thread=MainThread] Pytree save finalize (merge_ocdbt + ArrayMetadata validation) completed. Time taken: 0.003129s. use_zarr3=False, enable_post_merge_validation=True, directory=/home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model.orbax-checkpoint-tmp
+[2025-08-30 19:48:41,746][absl][INFO] - Renaming /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model.orbax-checkpoint-tmp to /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model
+[2025-08-30 19:48:41,746][absl][INFO] - [process=0][thread=MainThread] Finished saving checkpoint (finalized tmp dir) to `/home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model`.
+[2025-08-30 19:48:41,747][absl][INFO] - Finished synchronous save in 0.03 seconds to /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model
+[2025-08-30 19:48:41,747][__main__][INFO] - Model and config saved successfully with Orbax!
