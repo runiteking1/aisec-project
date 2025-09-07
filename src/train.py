@@ -3,6 +3,7 @@ from functools import partial
 import jax.numpy as jnp
 import jax
 import os
+from random import choices
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -93,7 +94,7 @@ def train_step(state: TrainState, batch: Tuple[jnp.ndarray, jnp.ndarray], num_cl
     return new_state, loss, accuracy
 
 
-def get_datasets():
+def get_datasets(poison_rate: float = 0.0):
     """
     Loads and prepares the MNIST dataset using the 'datasets' library,
     saving the processed data and loading it if it already exists.
@@ -106,42 +107,54 @@ def get_datasets():
         log.info("✅ Processed datasets found. Loading from disk...")
         train_data = jnp.load(processed_train_path, allow_pickle=True).item()
         test_data = jnp.load(processed_test_path, allow_pickle=True).item()
-        return {
-            'train': train_data,
-            'test': test_data
+    else:
+        # If not found, process and save the dataset
+        log.info("⏳ Processed datasets not found. Processing and saving...")
+        mnist_ds = load_dataset('mnist')
+
+        def preprocess(batch):
+            images = jnp.array(batch['image']) / 255.0
+            images = jnp.expand_dims(images, axis=-1)
+            labels = jnp.array(batch['label'])
+            return {'image': images, 'label': labels}
+
+        mnist_ds = mnist_ds.map(preprocess, batched=True)
+        train_ds = mnist_ds['train']
+        test_ds = mnist_ds['test']
+
+        train_data = {
+            'image': jnp.array(train_ds['image']),
+            'label': jnp.array(train_ds['label'])
+        }
+        test_data = {
+            'image': jnp.array(test_ds['image']),
+            'label': jnp.array(test_ds['label'])
         }
 
-    # If not found, process and save the dataset
-    log.info("⏳ Processed datasets not found. Processing and saving...")
-    mnist_ds = load_dataset('mnist')
+        # Save the processed datasets as .npy files
+        jnp.save(processed_train_path, train_data)
+        jnp.save(processed_test_path, test_data)
+        log.info("💾 Processed datasets saved successfully.")
 
-    def preprocess(batch):
-        images = jnp.array(batch['image']) / 255.0
-        images = jnp.expand_dims(images, axis=-1)
-        labels = jnp.array(batch['label'])
-        return {'image': images, 'label': labels}
+    # Poison the training dataset with a given percentage of bad labels
+    num_to_poison = int(len(train_data['label']) * poison_rate)
 
-    mnist_ds = mnist_ds.map(preprocess, batched=True)
-    train_ds = mnist_ds['train']
-    test_ds = mnist_ds['test']
+    if num_to_poison > 0:
+        log.info(f"💉 Poisoning {num_to_poison} ({poison_rate:.2%}) of the training labels...")
+        indices_to_poison = choices(range(len(train_data['label'])), k=num_to_poison)
 
-    train_datasets = {
-        'image': jnp.array(train_ds['image']),
-        'label': jnp.array(train_ds['label'])
-    }
-    test_datasets = {
-        'image': jnp.array(test_ds['image']),
-        'label': jnp.array(test_ds['label'])
-    }
+        # In-place modification of the labels
+        for idx in indices_to_poison:
+            original_label = train_data['label'][idx]
+            all_labels = list(range(10))
+            all_labels.remove(original_label)
+            # Pick a random incorrect label
+            new_label = choices(all_labels, k=1)[0]
+            train_data['label'] = train_data['label'].at[idx].set(new_label)
 
-    # Save the processed datasets as .npy files
-    jnp.save(processed_train_path, train_datasets)
-    jnp.save(processed_test_path, test_datasets)
-
-    log.info("💾 Processed datasets saved successfully.")
     return {
-        'train': train_datasets,
-        'test': test_datasets
+        'train': train_data,
+        'test': test_data
     }
 
 
@@ -170,7 +183,7 @@ def get_cifar10_datasets(num_classes: int = None):
             'image': jnp.array(test_data['image'])[test_mask],
             'label': jnp.array(test_data['label'])[test_mask]
         }
-        
+
         return {
             'train': train_data,
             'test': test_data
@@ -291,7 +304,7 @@ def train(cfg: DictConfig):
     if cfg.data.name == 'cifar10':
         datasets = get_cifar10_datasets(cfg.data.num_classes)
     elif cfg.data.name == 'mnist':
-        datasets = get_datasets()
+        datasets = get_datasets(cfg.data.poison)
     else:
         raise ValueError(f"Unknown dataset: {cfg.data.name}.")
 
@@ -315,7 +328,8 @@ def train(cfg: DictConfig):
     num_train_samples = len(train_ds['image'])
     num_test_samples = len(test_ds['image'])
     batch_size = cfg.training.batch_size
-    log.info(f'Num train {num_train_samples}; Num test {num_test_samples}; Number of steps per epoch: {num_train_samples // batch_size}')
+    log.info(
+        f'Num train {num_train_samples}; Num test {num_test_samples}; Number of steps per epoch: {num_train_samples // batch_size}')
 
     test_accuracies = np.zeros(cfg.training.epochs)
     train_losses = np.zeros(cfg.training.epochs)
@@ -391,7 +405,7 @@ def train(cfg: DictConfig):
     plot_training_metrics(np.array(all_batch_accuracies), np.array(all_batch_losses), test_accuracies,
                           num_train_samples // batch_size,
                           output_dir
-    )
+                          )
 
     # Instantiate the Orbax Checkpointer. The PyTreeCheckpointer is a general-purpose choice.
     checkpointer = ocp.PyTreeCheckpointer()

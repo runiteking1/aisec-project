@@ -3,3 +3,4 @@ name: mnist
 image_size: 28
 channels: 1
 num_classes: 10
+poison: 0.0

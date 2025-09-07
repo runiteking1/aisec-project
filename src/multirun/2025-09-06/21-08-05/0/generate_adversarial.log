@@ -1,0 +1,15 @@
+[2025-09-06 21:08:06,179][__main__][INFO] - data:
+  name: mnist
+  image_size: 28
+  channels: 1
+  num_classes: 10
+  poison: 0.1
+epsilon: 0.1
+batch_size: 256
+output_images: 10
+checkpoint_path: /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model
+experiment_name: mnist_adv
+seed: 42
+
+[2025-09-06 21:08:06,179][__main__][INFO] - Output directory: /home/marshall/Documents/aisec-project/src/multirun/2025-09-06/21-08-05/0
+[2025-09-06 21:08:06,264][jax._src.xla_bridge][INFO] - Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory

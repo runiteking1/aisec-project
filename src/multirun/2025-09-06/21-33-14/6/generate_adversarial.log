@@ -1,0 +1,25 @@
+[2025-09-06 21:34:10,498][__main__][INFO] - data:
+  name: mnist
+  image_size: 28
+  channels: 1
+  num_classes: 10
+  poison: 0.1
+epsilon: 0.1
+batch_size: 256
+output_images: 10
+checkpoint_path: /home/marshall/Documents/aisec-project/src/outputs/2025-09-06/gn-poison-10/checkpoint/model
+experiment_name: mnist_adv
+seed: 42
+
+[2025-09-06 21:34:10,498][__main__][INFO] - Output directory: /home/marshall/Documents/aisec-project/src/multirun/2025-09-06/21-33-14/6
+[2025-09-06 21:34:10,498][absl][INFO] - Created BasePyTreeCheckpointHandler: use_ocdbt=True, use_zarr3=False, pytree_metadata_options=PyTreeMetadataOptions(support_rich_types=False), array_metadata_store=<orbax.checkpoint._src.metadata.array_metadata_store.Store object at 0x7fac8d49f190>, enable_pinned_host_transfer=True, save_concurrent_bytes: 96000000000 (89.4 GiB), restore_concurrent_bytes: 96000000000 (89.4 GiB)
+[2025-09-06 21:34:10,498][absl][INFO] - Restoring checkpoint from /home/marshall/Documents/aisec-project/src/outputs/2025-09-06/gn-poison-10/checkpoint/model.
+[2025-09-06 21:34:10,506][absl][INFO] - [process=0] /jax/checkpoint/read/gbytes_per_sec: 0 Bytes/s (total gbytes: 27.0 KiB) (time elapsed: 7 milliseconds) (per-host)
+[2025-09-06 21:34:10,506][absl][INFO] - Finished restoring checkpoint in 0.01 seconds from /home/marshall/Documents/aisec-project/src/outputs/2025-09-06/gn-poison-10/checkpoint/model.
+[2025-09-06 21:34:10,510][train][INFO] - ✅ Processed datasets found. Loading from disk...
+[2025-09-06 21:34:10,570][__main__][INFO] - Saving example images to: /home/marshall/Documents/aisec-project/src/multirun/2025-09-06/21-33-14/6/fgsm_examples
+[2025-09-06 21:34:10,570][__main__][INFO] - Starting FGSM attack on 10000 test images with epsilon=0.1...
+[2025-09-06 21:34:20,091][__main__][INFO] - --- FGSM Attack Results ---
+[2025-09-06 21:34:20,091][__main__][INFO] - Total test images correctly classified by the model: 9581/10000
+[2025-09-06 21:34:20,091][__main__][INFO] - Successful attacks (fooled the model): 4888
+[2025-09-06 21:34:20,091][__main__][INFO] - Attack Success Rate: 51.02%

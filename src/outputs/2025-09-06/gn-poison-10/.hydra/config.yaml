@@ -1,0 +1,24 @@
+training:
+  epochs: 15
+  batch_size: 128
+  learning_rate: 0.01
+  optimizer: gn
+  early_stopping: true
+  gn_param: 0.01
+model:
+  features_per_layer:
+  - 4
+  - 8
+  kernel_size:
+  - 3
+  - 3
+  dense_features:
+  - 16
+data:
+  name: mnist
+  image_size: 28
+  channels: 1
+  num_classes: 10
+  poison: 0.1
+experiment_name: mnist_adv
+seed: 42
