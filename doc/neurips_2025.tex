@@ -1,0 +1,101 @@
+\documentclass{article}
+ \usepackage[preprint]{neurips_2025}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{amsmath}
+\title{Gauss-Newton under adversarial attacks}
+
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+\author{%
+  Marshall Jiang \\
+  \texttt{marshall.jiang@gmail.com} \\
+}
+
+
+\begin{document}
+
+
+\maketitle
+
+
+\begin{abstract}
+    The use of gradient-only optimizer is considered standard in training deep neural networks due to its flexibility and speed.
+    However, there has been interest in using Hessian information in accelerating gradient descent with methods like
+    generalized Gauss-Newton, K-FAC and BFGS at the forefront.
+    These methods generally converge faster to a local minima, assuming correct parameters are chosen, and these minima usually correspond to different ones found by gradient descent.
+    In particular, there has been evidence suggesting that Gauss-Newton might converge to minima with poor generalizability.
+    We present early results that this can actually be good for greater adversarial robustness.
+\end{abstract}
+
+
+\section{Introduction}
+With the extensive use of neural networks in a variety of fields, the safety and security concerns rise.
+One particular threat is so called ``adversarial attacks'' whereby an attacker perturbs data which causes a trained model to making an incorrect prediction.
+While trivial examples like email spam evasion might be annoying, increasingly high stakes usage start to arise in security or in self-driving cars.
+
+Adversarial examples usually lie on the decision boundaries learned by the neural network, as a small perturbation of an image or prompt will cause the network to misclassify.
+This suggests that curvature of the loss landscape can be used as a tool to understand the generation or detection of adversarial attacks TODO cite papers.
+While there are other ways to increase robustness, most commonly known as ``adversarial training'' where actual attacks are performed while training, we only focus on the curvature interpretation.
+
+In this article, we present a fairly early exploration into using Gauss-Newton as tool to enhance robustness.
+It has been noted that some minima found by certain second-order methods may be sharper and correspond to poorer generalizability on clean data.
+In this work, we present preliminary findings that suggest relationship: that a second-order optimization approach, specifically one based on the generalized Gauss-Newton approximation, may lead to a model that is more robust to adversarial attacks due to having poorer generalizability.
+We explore this trade-off and discuss the implications for developing more resilient deep learning systems.
+
+
+\section{Background}
+\subsection{Adversarial Attacks}
+    An adversarial attack involves the deliberate creation of an adversarial example, which is a data sample that has been minimally perturbed to cause a machine learning model to misclassify it.
+    These perturbations are scaled to be small enough to be perceptible to human senses, but can have massive consequences.
+
+    One of the easiest types of attack is the Fast-Gradient Sign Method (FGSM).
+    FGSM simply generates a perturbation by taking a single step in the gradient of the loss with respect to the image.
+    In other words, it finds the direction where changing the image will cause the largest increase in loss.
+    Mathematically, this is simply
+    \begin{align}
+        \bar x = x + \varepsilon \text{sign}(\nabla_x \mathcal L(x, \theta))
+    \end{align}
+    where $\varepsilon$ a small parameter, $\mathcal L(x, \theta)$ is the loss against the input $x$ and $\theta$ the network parameters.
+
+\subsection{Generalized Gauss-Newton}
+The Gauss-Newton method is a classical optimization method, which was developed initially for least squares, but now have been adapted for neural networks.
+Rather than the usual SGD updates
+\begin{align*}
+    \theta_{n+1} = \theta_n - \eta \nabla_{\theta} \mathcal L(x, \theta)
+\end{align*}
+where $\eta$ is the learning rate, generalized Gauss-Newton consists of using an approximation to the Hessian
+\begin{align*}
+    \theta_{n+1} = \theta_n - \eta (\lambda I + J^THJ)^{-1} \nabla_{\theta} \mathcal L(x, \theta)
+\end{align*}
+where $J$ the Jacobian of the neural network, $H$ the Hessian of the loss with respect to the network, and $\lambda$ some positive regularizer.
+
+
+\subsection{Loss Geometry and SAM analysis}
+
+\section{Methodology and analysis}
+- Built and trained three models using three different optimizers: SGD, Adam and Gauss-Newton
+    - Some light tuning of learning rate were done, but these were in no way exhaustive especially the Gauss-Newton.
+- We use a simple CNN with few parameters due to computational constraints, and trained until roughly 95 percent test accuracy.
+    - We further built 3 additional models with 10 percent poisoned data (e.g. data perturbed to be wrong) and trained.
+- With these we are able to attack all these models with FGSM for a variety of epsilon. WILL INSERT TABLE HERE.
+- We also obtained the "Input gradient norm and logit margin distributions"; (Please exposit on how this shows curvature)
+- Finally, some SAM analysis on the loss curvature shows that Gauss-Newton were significantly more curved.
+
+\section{Future Work}
+\end{document}
