@@ -76,12 +76,14 @@ def plot_distributions(gradient_norms, logit_margins, output_dir):
 
     # Plot Input Gradient Norm distribution
     plt.figure(figsize=(10, 6))
-    plt.hist(gradient_norms, bins=100, alpha=0.7, color='blue', edgecolor='black')
+    filtered_norms = gradient_norms[gradient_norms <= 2.0]
+    plt.hist(filtered_norms, bins=100, alpha=0.7, color='blue', edgecolor='black')
     plt.title("Distribution of Input Gradient Norms")
     plt.xlabel("L2 Norm of Input Gradient")
     plt.ylabel("Frequency")
-    plt.xlim(xmin=0, xmax=4)
+    plt.xlim(xmin=0, xmax=2)
     plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "input_gradient_norm_distribution.png"))
     plt.close()
 
@@ -91,8 +93,9 @@ def plot_distributions(gradient_norms, logit_margins, output_dir):
     plt.title("Distribution of Logit Margins")
     plt.xlabel("Logit Margin (True Logit - Max Incorrect Logit)")
     plt.ylabel("Frequency")
-    plt.xlim(xmin=-1, xmax=20)
+    # plt.xlim(xmin=-1, xmax=20)
     plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "logit_margin_distribution.png"))
     plt.close()
 

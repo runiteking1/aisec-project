@@ -1,0 +1,28 @@
+[2025-09-10 23:05:59,755][__main__][INFO] - data:
+  name: mnist
+  image_size: 28
+  channels: 1
+  num_classes: 10
+  poison: 0.0
+batch_size: 256
+output_images: 10
+checkpoint_path: /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/20-41-21/checkpoint/model
+experiment_name: mnist_adv
+seed: 42
+
+[2025-09-10 23:05:59,756][__main__][INFO] - Output directory: /home/marshall/Documents/aisec-project/src/outputs/2025-09-10/23-05-59
+[2025-09-10 23:05:59,824][jax._src.xla_bridge][INFO] - Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+[2025-09-10 23:05:59,894][absl][INFO] - Created BasePyTreeCheckpointHandler: use_ocdbt=True, use_zarr3=False, pytree_metadata_options=PyTreeMetadataOptions(support_rich_types=False), array_metadata_store=<orbax.checkpoint._src.metadata.array_metadata_store.Store object at 0x7f067861fd90>, enable_pinned_host_transfer=True, save_concurrent_bytes: 96000000000 (89.4 GiB), restore_concurrent_bytes: 96000000000 (89.4 GiB)
+[2025-09-10 23:05:59,894][absl][INFO] - orbax-checkpoint version: 0.11.23
+[2025-09-10 23:05:59,894][absl][INFO] - Restoring checkpoint from /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/20-41-21/checkpoint/model.
+[2025-09-10 23:05:59,972][absl][INFO] - [thread=MainThread] Failed to get flag value for EXPERIMENTAL_ORBAX_USE_DISTRIBUTED_PROCESS_ID.
+[2025-09-10 23:05:59,975][absl][INFO] - [process=0] /jax/checkpoint/read/gbytes_per_sec: 0 Bytes/s (total gbytes: 26.9 KiB) (time elapsed: 80 milliseconds) (per-host)
+[2025-09-10 23:05:59,975][absl][INFO] - Finished restoring checkpoint in 0.08 seconds from /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/20-41-21/checkpoint/model.
+[2025-09-10 23:06:00,134][train][INFO] - ✅ Processed datasets found. Loading from disk...
+[2025-09-10 23:06:00,365][__main__][INFO] - Calculating metrics on 10000 test images...
+[2025-09-10 23:06:06,575][__main__][INFO] - Plots saved to: /home/marshall/Documents/aisec-project/src/outputs/2025-09-10/23-05-59
+[2025-09-10 23:06:06,575][__main__][INFO] - --- Robustness Analysis Results ---
+[2025-09-10 23:06:06,611][__main__][INFO] - Mean Input Gradient Norm: 0.5057
+[2025-09-10 23:06:06,939][__main__][INFO] - Median Input Gradient Norm: 0.4879
+[2025-09-10 23:06:06,939][__main__][INFO] - Mean Logit Margin: 1.2851
+[2025-09-10 23:06:06,939][__main__][INFO] - Median Logit Margin: 1.4257
