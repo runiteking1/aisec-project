@@ -1,0 +1,6 @@
+jax
+flax
+orbax-checkpoint
+matplotlib
+tqdm
+treescope
