@@ -6,12 +6,20 @@ The goal of the project is to investigate adversarial robustness and sharpness o
 # Structure
 
 aisec-project/
+
 ├── conf/ # Configuration files (e.g. experiments, hyperparameters)
-├── doc/ # Documentation
-│ └── neurips_2025.tex 
+
+├── doc/ # Latex documentation
+
 ├── src/ # Source code: models, training, evaluation, utilities
+
+│ └── multirun/ # Sweeps over models/rho
+
+│ └── outputs/ # Run logs from my runs. 
+
 ├── requirements.txt # All installed dependencies
+
 └── .gitignore
 
-Note that model parameters are uploaded into the Hydra run folders. 
+Note that model parameters are uploaded into the Hydra run folders and should be easily replicated. 
 
