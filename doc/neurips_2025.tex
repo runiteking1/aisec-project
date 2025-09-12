@@ -49,15 +49,15 @@
 
     \section{Introduction}
     With the extensive use of neural networks in a variety of fields, the safety and security concerns rise.
-    One particular threat is so called ``adversarial attacks'' whereby an attacker perturbs data which causes a trained model to making an incorrect prediction.
+    One particular threat is so called ``adversarial attacks'' whereby an attacker perturbs data which causes a trained model to making an incorrect prediction \citep{chakraborty2018adversarial}.
     While trivial examples like email spam evasion might be annoying, increasingly high stakes usage start to arise in security or in self-driving cars.
 
     Adversarial examples usually lie on the decision boundaries learned by the neural network, as a small perturbation of an image or prompt will cause the network to misclassify.
-    This suggests that curvature of the loss landscape can be used as a tool to understand the generation or detection of adversarial attacks TODO cite papers.
+    This suggests that curvature of the loss landscape can be used as a tool to understand the generation or detection of adversarial attacks \citep{zheng2023detecting,liu2022flooding}.
     While there are other ways to increase robustness, most commonly known as ``adversarial training'' where actual attacks are performed while training, we only focus on the curvature interpretation.
 
     In this article, we present a fairly early exploration into using Gauss-Newton as tool to enhance robustness.
-    It has been noted that some minima found by certain second-order methods may be sharper and correspond to poorer generalizability on clean data.
+    It has been noted that some minima found by certain second-order methods may be sharper and correspond to poorer generalizability on clean data \citep{buffelli2024exact,amari2020does}.
     In this work, we present preliminary findings that suggest relationship: that a second-order optimization approach, specifically one based on the generalized Gauss-Newton approximation, may lead to a model that is more robust to adversarial attacks due to having poorer generalizability.
     We explore this trade-off and discuss the implications for developing more resilient deep learning systems.
 
@@ -68,7 +68,7 @@
     An adversarial attack involves the deliberate creation of an adversarial example, which is a data sample that has been minimally perturbed to cause a machine learning model to misclassify it.
     These perturbations are scaled to be small enough to be perceptible to human senses, but can have massive consequences.
 
-    One of the easiest types of attack is the Fast-Gradient Sign Method (FGSM).
+    One of the easiest types of attack is the Fast-Gradient Sign Method (FGSM) \citep{goodfellow2015explainingharnessingadversarialexamples}.
     FGSM simply generates a perturbation by taking a single step in the gradient of the loss with respect to the image.
     In other words, it finds the direction where changing the image will cause the largest increase in loss.
     Mathematically, this is simply
@@ -77,7 +77,7 @@
         \bar x = x + \varepsilon \text{sign}(\nabla_x \mathcal L(x, \theta))
     \end{align}
     where $\varepsilon$ a small parameter, $\mathcal L(x, \theta)$ is the loss against the input $x$ and $\theta$ the network parameters.
-    A succesful attack is shown in \cref{fig:attack}.
+    A successful attack is shown in \cref{fig:attack}.
 
     \begin{figure}
         \centering
@@ -89,7 +89,7 @@
     \end{figure}
 
     \subsection{Generalized Gauss-Newton}
-    The Gauss-Newton method is a classical optimization method, which was developed initially for least squares, but now have been adapted for neural networks.
+    The Gauss-Newton method is a classical optimization method, which was developed initially for least squares, but now have been adapted for neural networks \citep{botev2017practicalgaussnewtonoptimisationdeep}.
     Rather than the usual SGD updates
     \begin{align*}
         \theta_{n+1} = \theta_n - \eta \nabla_{\theta} \mathcal L(x, \theta)
@@ -98,24 +98,20 @@
     \begin{align*}
         \theta_{n+1} = \theta_n - \eta (\lambda I + J^THJ)^{-1} \nabla_{\theta} \mathcal L(x, \theta)
     \end{align*}
-    where $J$ the Jacobian of the neural network, $H$ the Hessian of the loss with respect to the network, and $\lambda$ some positive regularizer.
-
-    \subsection{Poisoned Dataset}
-
-    \subsection{Loss Geometry and SAM analysis}
+    where $J$ the Jacobian of the neural network, $H$ the Hessian of the loss with respect to the network, and $\lambda$ some positive regularizer
 
 
     \section{Methodology and analysis}
     We built and trained three different models using different optimizers: SGD, Adam and Gauss-Newton.
     While all three models have the exact same architecture and start with the same initial seeds, the use of different optimizers will result in them ending up with different behaviors.
-    A simple, small CNN is chosen for sake of computational costs.
+    A simple, small convolution neural network is chosen for sake of computational costs.
     These models are trained on the MNIST dataset, and a small grid search was conducted to find a candidate learning rate.
     This hyperparameter search is by no means exhaustive, especially for the Gauss-Newton case, where there are considerably more levers to tweak.
     All models are trained such that they achieve roughly 95\% accuracy on the test set.
 
     In a secondary experiment, we trained three additional models, one for each optimizer, on a ``poisoned`` dataset.
     This dataset was constructed by taking 10\% of the original training data and perturbing it with the wrong label.
-    We refer the reader to the appendix or code base for the exact details.
+    We refer the reader to the code base for the exact details.\footnote{Available at \url{https://github.com/runiteking1/aisec-project/}}
 
     \subsection{Adversarial Robustness}
     With the models trained, all models are subject to adversarial attacks by FGSM.
@@ -161,29 +157,92 @@
         \end{tabular}
     \end{table}
 
-    \subsection{Simple Analysis}
+    \subsection{Analysis}
     Beyond simple accuracy metrics, we sought to understand the geometric properties of the local minima that each optimizer converged to, and how these properties relate to adversarial robustness.
     We performed two key analyses to measure curvature.
+
     \subsubsection{Input Gradient Norm and Logit Margin Distributions}
     To understand the local geometry of the model's decision boundary in the input space, we measured the distribution of the input gradient norm and the logit margin for each model on the clean test set.
 
     The input gradient norm is defined as $\norm{\nabla_x \mathcal L(x, \theta)}^2$ the norm of the gradient at the loss.
     A high norm indicates that the model's output is highly sensitive to a small change in the input, suggesting that the data point is located in a region of high curvature.
-    The common As such, a small perturbation can push an image into a different decision.
-    We show the distribution over the test set in \cref{fig:grad-norm}.
-    It's clear that Gauss-Newton's model resulted in a
+    The common assumption is that high norms usually mean an easier attack vectors, as one the same amount of change can cause greater change in the loss value.
+    However, this is \emph{not} what we show the distribution over the test set in \cref{fig:grad-norm}.
+    In fact, it seems that the Gauss Newton resulted in significantly larger average norm compared to Adam!
+    This suggests that GN converges to a far different type of local minima, where the decision boundaries are more seperated.
 
-    \begin{figure}
+    As for the logit margin, it is a measure of the model's confidence.
+    Mathematically, it's the largest logit (the prediction) minus the second largest logit.
+    Thus, the bigger the difference, the more sure a model generally is.
+    In \cref{fig:logit-margin}, we observe that GN model actually, unintuitively, resulted in a model which is more unsure in absolute magnitude.
+    Again, this suggests additional work is needed to examine this interesting phenomena.
+
+    \begin{figure}[ht]
         \centering
-        \includegraphics[width=0.4\textwidth]{../src/outputs/2025-09-10/23-05-38/input_gradient_norm_distribution.png}
-        \includegraphics[width=0.4\textwidth]{../src/outputs/2025-09-10/23-05-59/input_gradient_norm_distribution.png}
+        \includegraphics[width=0.44\textwidth]{../src/outputs/2025-09-10/23-05-38/input_gradient_norm_distribution.png}
+        \includegraphics[width=0.44\textwidth]{../src/outputs/2025-09-10/23-05-59/input_gradient_norm_distribution.png}
         \caption{Figure of distribution of input gradient norms on the test set with Adam on the left and GN on right.
         Note that the Adam has significantly smaller norms, meaning the curvature near the model is more flat compared to GN.}
         \label{fig:grad-norm}
     \end{figure}
 
-    \textbf{The Nature of Second-Order Optimization:}
-    Your initial hypothesis was that Gauss-Newton's minimum might be different from SGD's.
-    This finding confirms it. The Gauss-Newton optimizer, by using curvature information, may be converging to a minimum that is not as ``flat`` in the parameter space as an SGD minimum, but is in fact \textit{more robust} to input perturbations.
-    This is a novel finding worth highlighting.
+    \begin{figure}[ht]
+        \centering
+        \includegraphics[width=0.44\textwidth]{../src/outputs/2025-09-10/23-05-38/logit_margin_distribution.png}
+        \includegraphics[width=0.44\textwidth]{../src/outputs/2025-09-10/23-05-59/logit_margin_distribution.png}
+        \caption{Figure of distribution of logit margins on the test set with Adam on the left and GN on right.
+        The $x$-scale is different on the figures.
+        Note that Adam seems to be generally quite confident while GN is more ``timid'' in its response.}
+        \label{fig:logit-margin}
+    \end{figure}
+
+    \subsubsection{SAM Analysis}
+    Sharpness-Aware Minimization (SAM) is an optimization method that directly connects the geometry of a model's loss landscape to its adversarial robustness.
+    It operates on the principle that a model's ability to withstand adversarial attacks on its input data is tied to the "flatness" of the minimum it converges to in the parameter space.
+
+    While traditional optimizers aim to find a minimum with the lowest possible loss, SAM seeks to minimize the worst case loss within a small neighborhood around the model's current parameters.
+    Mathematically, this is the minimax problem
+    \begin{align*}
+        \min_{\theta} max_{\norm{\varepsilon} \le \rho} \mathcal L(\theta + \varepsilon).
+    \end{align*}
+    The max operator ensures that the landscape around the loss is flat and less ``brittle.''
+
+    We performed simplified SAM analysis and display the results in \cref{tab:sam_results}.
+    The GN model seems to have greater curvature at the loss, again, counterintuitively.
+
+
+    \begin{table}[ht!]
+        \centering
+        \caption{Median Loss Increase from SAM Analysis for Adam and Gauss-Newton.
+        We note that like the logit/gradient norms metrics, these results are unintuitive!}
+        \label{tab:sam_results}
+        \begin{tabular}{|l|c|c|}
+            \hline
+            \textbf{$\rho$} & \textbf{GN Median Loss Increase} & \textbf{Adam Median Loss Increase} \\
+            \hline
+            0.001 & 0.0026 & 0.0009\\
+            \hline
+            0.005 & 0.0137 & 0.0048 \\
+            \hline
+            0.01 & 0.0282 & 0.0101  \\
+            \hline
+        \end{tabular}
+    \end{table}
+
+    \section{Future Work}
+    The results obtained from this work is intriguing: while the analysis by all accounts should result in a resounding victory for Adam, GN performed much better. \footnote{This could be a user error, but I belive I was very careful.}
+    However, this is very exploratory as MNIST is considered too easy of a dataset and GN is too slow of an optimizer for large scale problem.
+    With more resources, one should run K-FAC, which is inherently more scalable, on CIFAR10 or Imagenet data.
+    More experiment should also be done with the poisoned dataset idea.
+    % I wonder if NTK analysis can be done here...; linear subspace is less likely to be attacked? Oh but classification
+
+    \begin{ack}
+        Thanks to Qin Liu for helpful comments and guidance on possible analysis.
+
+        All code ran on Nvidia 4070 and Jax.
+    \end{ack}
+    \bibliographystyle{plain}
+    \bibliography{sources}
+
+
 \end{document}

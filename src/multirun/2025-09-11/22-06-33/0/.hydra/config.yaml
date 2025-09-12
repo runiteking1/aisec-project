@@ -1,0 +1,12 @@
+data:
+  name: mnist
+  image_size: 28
+  channels: 1
+  num_classes: 10
+  poison: 0.0
+rho: 0.001
+batch_size: 256
+output_images: 10
+checkpoint_path: /home/marshall/Documents/aisec-project/src/outputs/2025-08-30/19-48-19/checkpoint/model
+experiment_name: mnist_adv
+seed: 42
