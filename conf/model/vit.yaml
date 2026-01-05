@@ -1,0 +1,16 @@
+# Vision Transformer configuration for MNIST
+
+# Model type identifier
+model_type: vit
+
+# Patch extraction
+patch_size: 4
+
+# Transformer architecture
+hidden_dim: 128
+num_layers: 4
+num_heads: 4
+mlp_dim: 256
+
+# Regularization (disabled for simplicity)
+dropout_rate: 0.1

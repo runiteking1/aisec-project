@@ -1,6 +1,9 @@
 # A simple configuration for the CNN model.
 # The parameters in this file define the model's architecture.
 
+# Model type
+model_type: cnn
+
 # The list of features for each convolutional layer.
 # This corresponds to the number of convolutional layers and their output depth.
 #features_per_layer: [32, 64]

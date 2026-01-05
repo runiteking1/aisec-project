@@ -14,7 +14,7 @@ from omegaconf import DictConfig, OmegaConf
 from datasets import load_dataset
 from flax.training.train_state import TrainState
 
-from src.models import CNN
+from src.models import CNN, VisionTransformer
 from typing import Tuple, Any
 import orbax.checkpoint as ocp
 import logging
@@ -280,13 +280,24 @@ def train(cfg: DictConfig):
     # Get a JAX PRNGKey for reproducibility
     key = jax.random.PRNGKey(cfg.seed)
 
-    # Instantiate the model and optimizer based on the config
-    model = CNN(
-        features_per_layer=tuple(cfg.model.features_per_layer),
-        kernel_size=tuple(cfg.model.kernel_size),
-        dense_features=tuple(cfg.model.dense_features),
-        num_classes=cfg.data.num_classes
-    )
+    # Instantiate the model based on configuration
+    if hasattr(cfg.model, 'model_type') and cfg.model.model_type == 'vit':
+        model = VisionTransformer(
+            patch_size=cfg.model.patch_size,
+            hidden_dim=cfg.model.hidden_dim,
+            num_layers=cfg.model.num_layers,
+            num_heads=cfg.model.num_heads,
+            mlp_dim=cfg.model.mlp_dim,
+            dropout_rate=cfg.model.dropout_rate,
+            num_classes=cfg.data.num_classes
+        )
+    else:  # Default to CNN
+        model = CNN(
+            features_per_layer=tuple(cfg.model.features_per_layer),
+            kernel_size=tuple(cfg.model.kernel_size),
+            dense_features=tuple(cfg.model.dense_features),
+            num_classes=cfg.data.num_classes
+        )
 
     # Dynamically select the optimizer based on the config file
     gn_param = None
