@@ -31,3 +31,14 @@ for epsilon in 0.1 0.05 0.01; do
         checkpoint_path="$CKPT" \
         epsilon="$epsilon"
 done
+
+echo "=== PGD adversarial attack (40 steps) ==="
+for pair in "0.1:0.01" "0.05:0.005" "0.01:0.001"; do
+    epsilon="${pair%%:*}"
+    alpha="${pair##*:}"
+    echo "  epsilon=$epsilon alpha=$alpha"
+    python -m src.generate_pgd \
+        checkpoint_path="$CKPT" \
+        epsilon="$epsilon" \
+        alpha="$alpha"
+done

@@ -1,0 +1,12 @@
+defaults:
+  - data: mnist
+  - _self_
+
+epsilon: 0.1
+alpha: 0.01       # per-step size; typically epsilon/10
+num_steps: 40     # number of gradient steps
+batch_size: 256
+output_images: 10
+checkpoint_path: 'ERROR' # This must be set individually
+experiment_name: "mnist_pgd"
+seed: 42
