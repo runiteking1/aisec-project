@@ -11,7 +11,7 @@ from omegaconf import DictConfig, OmegaConf
 from tqdm import trange
 
 from src.models import CNN
-from train import get_datasets
+from src.train import get_datasets
 
 log = logging.getLogger(__name__)
 

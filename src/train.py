@@ -65,27 +65,47 @@ def train_step(state: TrainState, batch: Tuple[jnp.ndarray, jnp.ndarray], num_cl
     # This is not that optimized; but it's okay
     if gauss_newton is not None:
         bsz = len(batch[0])
+
+        # jacobian pytree: same structure as params, each leaf shape (bsz, num_classes, *leaf_param_shape)
         jacobian = jax.jacobian(
             lambda p: state.apply_fn({'params': p}, batch[0])
         )(state.params)
-        flattened, _ = jax.tree.flatten(
-            jacobian
-        )
 
-        reshaped_leaves = [leaf.reshape(
-            bsz * num_classes, 1, -1) for leaf in flattened]
+        # flattened: list of leaves, each shape (bsz, num_classes, *leaf_param_shape)
+        flattened, _ = jax.tree.flatten(jacobian)
+
+        # reshape each leaf to (bsz*num_classes, 1, leaf_params), then concatenate along last axis
+        # aggregated_array: (bsz*num_classes, 1, total_params)
+        # jacobian:         (bsz*num_classes, total_params)  — full Jacobian matrix J
+        reshaped_leaves = [leaf.reshape(bsz * num_classes, 1, -1) for leaf in flattened]
         aggregated_array = jnp.concatenate(reshaped_leaves, axis=-1)
         jacobian = aggregated_array.reshape((bsz * num_classes, -1))
+        P = jacobian.shape[1]
+        assert aggregated_array.shape == (bsz * num_classes, 1, P)
+        assert jacobian.shape == (bsz * num_classes, P)
 
-        # Generalized Gauss-Newton is J^THJ
-        probs = jax.nn.softmax(logits, axis=-1).flatten()
-        diag_probs = jnp.diag(probs)
-        outer_probs = jnp.outer(probs, probs)
-        h_mat = diag_probs - outer_probs
+        # Generalized Gauss-Newton: sum_i J_i^T H_i J_i
+        # H is block-diagonal; each per-sample block is diag(p_i) - p_i p_i^T
 
+        # probs:    (bsz, num_classes)
+        # h_blocks: (bsz, num_classes, num_classes) — per-sample softmax Hessians
+        # J_reshaped: (bsz, num_classes, P) — J split back into per-sample blocks
+        # ggn_matrix: (P, P) — sum_i J_i^T H_i J_i
+        probs = jax.nn.softmax(logits, axis=-1)
+        h_blocks = jax.vmap(lambda p: jnp.diag(p) - jnp.outer(p, p))(probs)
+        J_reshaped = jacobian.reshape(bsz, num_classes, P)
+        ggn_matrix = jnp.einsum('bni,bnm,bmj->ij', J_reshaped, h_blocks, J_reshaped)
+        assert probs.shape == (bsz, num_classes)
+        assert h_blocks.shape == (bsz, num_classes, num_classes)
+        assert J_reshaped.shape == (bsz, num_classes, P)
+        assert ggn_matrix.shape == (P, P)
+
+        # flattened: (P,) — ravelled gradient vector
+        # altered:   (P,) — GGN-preconditioned gradient: (GGN + lambda*I)^{-1} g
         flattened, back = jax.flatten_util.ravel_pytree(grads)
-        altered = jnp.linalg.solve(jacobian.T @ h_mat @ jacobian + gauss_newton * jnp.eye(jacobian.shape[1]),
-                                   flattened)
+        assert flattened.shape == (P,)
+        altered = jnp.linalg.solve(ggn_matrix + gauss_newton * jnp.eye(P), flattened)
+        assert altered.shape == (P,)
         grads = back(altered)
 
     # Compute the parameter updates using the optimizer and apply them

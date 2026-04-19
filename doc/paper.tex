@@ -138,11 +138,11 @@
             \hline
             \textbf{Optimizer} & \textbf{Correct Tests} & $\varepsilon=0.1$ & $\varepsilon=0.05$ & $\varepsilon=0.01$ \\
             \hline
-            Adam               & 9778                   & 7396 (75.64\%)    & 3142 (32.13\%)     & 253 (2.59\%)       \\
+            Adam               & 9780                   & 7412 (75.78\%)    & 3157 (32.28\%)     & 254 (2.60\%)       \\
             \hline
-            SGD                & 9611                   & 7268 (75.62\%)    & 2687 (27.96\%)     & 227 (2.36\%)       \\
+            SGD                & 9610                   & 7271 (75.64\%)    & 2687 (27.96\%)     & 226 (2.35\%)       \\
             \hline
-            Gauss-Newton       & 9585                   & 4937 (51.51\%)    & 1334 (13.92\%)     & 159 (1.66\%)       \\
+            Gauss-Newton       & 9620                   & 6451 (67.06\%)    & 1748 (18.17\%)     & 186 (1.93\%)       \\
             \hline
         \end{tabular}
     \end{table}
@@ -155,11 +155,11 @@
             \hline
             \textbf{Optimizer} & \textbf{Correct Tests} & $\varepsilon=0.1$ & $\varepsilon=0.05$ & $\varepsilon=0.01$ \\
             \hline
-            Adam               & 9776                   & 6259 (64.02\%)    & 2105 (21.53\%)     & 186 (1.90\%)       \\
+            Adam               & 9733                   & 5490 (56.38\%)    & 1946 (19.98\%)     & 177 (1.82\%)       \\
             \hline
-            SGD                & 9553                   & 6016 (62.97\%)    & 1775 (18.58\%)     & 173 (1.81\%)       \\
+            SGD                & 9592                   & 6703 (69.83\%)    & 2034 (21.19\%)     & 204 (2.13\%)       \\
             \hline
-            Gauss-Newton       & 9581                   & 4888 (51.02\%)    & 1367 (14.27\%)     & 162 (1.69\%)       \\
+            Gauss-Newton       & 9611                   & 6650 (69.20\%)    & 1868 (19.44\%)     & 199 (2.07\%)       \\
             \hline
         \end{tabular}
     \end{table}
@@ -191,8 +191,8 @@
 
     \begin{figure}[ht]
         \centering
-        \includegraphics[width=0.44\textwidth]{../src/outputs/2025-09-10/23-05-38/input_gradient_norm_distribution.png}
-        \includegraphics[width=0.44\textwidth]{../src/outputs/2025-09-10/23-05-59/input_gradient_norm_distribution.png}
+        \includegraphics[width=0.44\textwidth]{../outputs/2026-04-18/18-35-09/input_gradient_norm_distribution.png}
+        \includegraphics[width=0.44\textwidth]{../outputs/2026-04-18/18-42-29/input_gradient_norm_distribution.png}
         \caption{Figure of distribution of input gradient norms on the test set with Adam on the left and GN on right.
         Note that the Adam has significantly smaller norms, meaning the curvature near the model is more flat compared to GN.}
         \label{fig:grad-norm}
@@ -200,8 +200,8 @@
 
     \begin{figure}[ht]
         \centering
-        \includegraphics[width=0.44\textwidth]{../src/outputs/2025-09-10/23-05-38/logit_margin_distribution.png}
-        \includegraphics[width=0.44\textwidth]{../src/outputs/2025-09-10/23-05-59/logit_margin_distribution.png}
+        \includegraphics[width=0.44\textwidth]{../outputs/2026-04-18/18-35-09/logit_margin_distribution.png}
+        \includegraphics[width=0.44\textwidth]{../outputs/2026-04-18/18-42-29/logit_margin_distribution.png}
         \caption{Figure of distribution of logit margins on the test set with Adam on the left and GN on right.
         The $x$-scale is different on the figures.
         Note that Adam seems to be generally quite confident while GN is more ``timid'' in its response.}
@@ -234,9 +234,9 @@
             \hline
             0.001 & 0.0026 & 0.0009\\
             \hline
-            0.005 & 0.0137 & 0.0048 \\
+            0.005 & 0.0127 & 0.0049 \\
             \hline
-            0.01 & 0.0282 & 0.0101  \\
+            0.01 & 0.0261 & 0.0102  \\
             \hline
         \end{tabular}
     \end{table}
