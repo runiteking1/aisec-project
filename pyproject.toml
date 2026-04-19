@@ -1,0 +1,18 @@
+[project]
+name = "aisec-project"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "jax[cuda12]==0.6.2",
+    "flax",
+    "optax",
+    "orbax-checkpoint",
+    "hydra-core",
+    "omegaconf",
+    "datasets",
+    "matplotlib",
+    "numpy",
+    "pillow",
+    "tqdm",
+    "treescope",
+]

@@ -9,23 +9,26 @@ Research project investigating adversarial robustness and loss landscape sharpne
 ## Common Commands
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (requires uv)
+uv sync
 
 # Train a model (outputs saved to outputs/[timestamp]/)
-python -m src.train                         # default: CNN + Adam + MNIST
-python -m src.train training=gn             # Gauss-Newton optimizer
-python -m src.train training=sgd            # SGD optimizer
-python -m src.train data=cifar              # CIFAR-10 dataset
-python -m src.train model=vit               # Vision Transformer
+uv run python -m src.train                         # default: CNN + Adam + MNIST
+uv run python -m src.train training=gn             # Gauss-Newton optimizer
+uv run python -m src.train training=sgd            # SGD optimizer
+uv run python -m src.train data=cifar              # CIFAR-10 dataset
+uv run python -m src.train model=vit               # Vision Transformer
 
 # Analysis (requires checkpoint path from a prior training run)
-python -m src.analyze_robustness checkpoint_path="/path/to/outputs/.../checkpoint/model"
-python -m src.analyze_sharpness  checkpoint_path="/path/to/outputs/.../checkpoint/model" rho=0.01
-python -m src.generate_adversarial checkpoint_path="/path/to/outputs/.../checkpoint/model" epsilon=0.1
+uv run python -m src.analyze_robustness checkpoint_path="/path/to/outputs/.../checkpoint/model"
+uv run python -m src.analyze_sharpness  checkpoint_path="/path/to/outputs/.../checkpoint/model" rho=0.01
+uv run python -m src.generate_adversarial checkpoint_path="/path/to/outputs/.../checkpoint/model" epsilon=0.1
+uv run python -m src.generate_pgd checkpoint_path="/path/to/outputs/.../checkpoint/model" epsilon=0.1 alpha=0.01
 ```
 
 There are no test or lint commands configured.
+
+**Note:** JAX is pinned to 0.6.2 in `pyproject.toml` for compatibility with CUDA 12.2 (driver 535). Do not upgrade JAX without verifying the driver supports the corresponding CUDA runtime version.
 
 ## Architecture
 
@@ -36,7 +39,7 @@ There are no test or lint commands configured.
 - `conf/model/` — architecture configs: `default.yaml` (CNN), `vit.yaml` (Vision Transformer)
 - `conf/data/` — dataset configs: `mnist.yaml`, `cifar.yaml`
 
-Analysis tools have their own configs: `conf/adversarial.yaml`, `conf/analyze_robustness.yaml`, `conf/analyze_sharpness.yaml`.
+Analysis tools have their own configs: `conf/adversarial.yaml`, `conf/pgd.yaml`, `conf/analyze_robustness.yaml`, `conf/analyze_sharpness.yaml`.
 
 ### Pipeline
 
@@ -45,7 +48,8 @@ src/train.py  →  outputs/[timestamp]/checkpoint/model/
                     ↓
     ├── src/analyze_robustness.py   (gradient norms, logit margins)
     ├── src/analyze_sharpness.py    (SAM-style loss curvature)
-    └── src/generate_adversarial.py (FGSM attacks)
+    ├── src/generate_adversarial.py (FGSM attacks)
+    └── src/generate_pgd.py         (PGD attacks)
 ```
 
 All scripts are Hydra entry points. Training saves checkpoints with Orbax (includes params + full config). Analysis scripts load these checkpoints and write result plots alongside them.
