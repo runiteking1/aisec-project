@@ -1,0 +1,13 @@
+defaults:
+  - data: mnist
+  - _self_
+
+checkpoint_path_a: 'ERROR'
+checkpoint_path_b: 'ERROR'
+label_a: "Adam"
+label_b: "GN"
+grid_size: 25     # grid_size x grid_size evaluations per model
+coord_range: 1.0  # explore ± coord_range along each direction
+num_samples: 512  # test images used to evaluate loss at each grid point
+experiment_name: "landscape"
+seed: 42

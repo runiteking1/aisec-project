@@ -1,0 +1,12 @@
+defaults:
+  - data: mnist
+  - _self_
+
+source_checkpoint_path: 'ERROR'  # model that generates the adversarial examples
+target_checkpoint_path: 'ERROR'  # model under evaluation
+epsilon: 0.1
+alpha: 0.01
+num_steps: 40
+batch_size: 256
+experiment_name: "transfer_attack"
+seed: 42
