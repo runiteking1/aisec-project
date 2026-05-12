@@ -20,7 +20,7 @@ from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
 from src.models import CNN
-from src.train import get_datasets
+from src.data import get_datasets
 
 log = logging.getLogger(__name__)
 

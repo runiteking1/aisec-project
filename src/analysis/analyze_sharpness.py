@@ -13,7 +13,7 @@ from tqdm import trange
 from jax.tree_util import tree_map
 
 from src.models import CNN
-from src.train import get_datasets
+from src.data import get_datasets
 
 log = logging.getLogger(__name__)
 
