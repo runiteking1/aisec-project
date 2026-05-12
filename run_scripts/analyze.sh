@@ -10,18 +10,21 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
+OUT_DIR="$1"
 CKPT="$(realpath "$1")/checkpoint/model"
 
 echo "=== Robustness analysis (gradient norms + logit margins) ==="
 python -m src.analysis.analyze_robustness \
-    checkpoint_path="$CKPT"
+    checkpoint_path="$CKPT" \
+    "hydra.run.dir=$OUT_DIR"
 
 echo "=== SAM sharpness analysis ==="
 for rho in 0.001 0.005 0.01; do
     echo "  rho=$rho"
     python -m src.analysis.analyze_sharpness \
         checkpoint_path="$CKPT" \
-        rho="$rho"
+        rho="$rho" \
+        "hydra.run.dir=$OUT_DIR"
 done
 
 echo "=== FGSM adversarial attack ==="
@@ -29,7 +32,8 @@ for epsilon in 0.1 0.05 0.01; do
     echo "  epsilon=$epsilon"
     python -m src.attacks.generate_adversarial \
         checkpoint_path="$CKPT" \
-        epsilon="$epsilon"
+        epsilon="$epsilon" \
+        "hydra.run.dir=$OUT_DIR"
 done
 
 echo "=== PGD adversarial attack (40 steps) ==="
@@ -40,5 +44,6 @@ for pair in "0.1:0.01" "0.05:0.005" "0.01:0.001"; do
     python -m src.attacks.generate_pgd \
         checkpoint_path="$CKPT" \
         epsilon="$epsilon" \
-        alpha="$alpha"
+        alpha="$alpha" \
+        "hydra.run.dir=$OUT_DIR"
 done
