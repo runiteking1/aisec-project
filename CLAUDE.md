@@ -20,10 +20,10 @@ uv run python -m src.train data=cifar              # CIFAR-10 dataset
 uv run python -m src.train model=vit               # Vision Transformer
 
 # Analysis (requires checkpoint path from a prior training run)
-uv run python -m src.analyze_robustness checkpoint_path="/path/to/outputs/.../checkpoint/model"
-uv run python -m src.analyze_sharpness  checkpoint_path="/path/to/outputs/.../checkpoint/model" rho=0.01
-uv run python -m src.generate_adversarial checkpoint_path="/path/to/outputs/.../checkpoint/model" epsilon=0.1
-uv run python -m src.generate_pgd checkpoint_path="/path/to/outputs/.../checkpoint/model" epsilon=0.1 alpha=0.01
+uv run python -m src.analysis.analyze_robustness checkpoint_path="/path/to/outputs/.../checkpoint/model"
+uv run python -m src.analysis.analyze_sharpness  checkpoint_path="/path/to/outputs/.../checkpoint/model" rho=0.01
+uv run python -m src.attacks.generate_adversarial checkpoint_path="/path/to/outputs/.../checkpoint/model" epsilon=0.1
+uv run python -m src.attacks.generate_pgd checkpoint_path="/path/to/outputs/.../checkpoint/model" epsilon=0.1 alpha=0.01
 ```
 
 There are no test or lint commands configured.
@@ -46,10 +46,13 @@ Analysis tools have their own configs: `conf/adversarial.yaml`, `conf/pgd.yaml`,
 ```
 src/train.py  →  outputs/[timestamp]/checkpoint/model/
                     ↓
-    ├── src/analyze_robustness.py   (gradient norms, logit margins)
-    ├── src/analyze_sharpness.py    (SAM-style loss curvature)
-    ├── src/generate_adversarial.py (FGSM attacks)
-    └── src/generate_pgd.py         (PGD attacks)
+    ├── src/analysis/analyze_robustness.py   (gradient norms, logit margins)
+    ├── src/analysis/analyze_sharpness.py    (SAM-style loss curvature)
+    ├── src/analysis/visualize_landscape.py  (loss landscape plots)
+    ├── src/attacks/generate_adversarial.py  (FGSM attacks)
+    ├── src/attacks/generate_pgd.py          (PGD attacks)
+    ├── src/attacks/square_attack.py         (black-box Square Attack)
+    └── src/attacks/transfer_attack.py       (transfer attacks)
 ```
 
 All scripts are Hydra entry points. Training saves checkpoints with Orbax (includes params + full config). Analysis scripts load these checkpoints and write result plots alongside them.
@@ -79,4 +82,4 @@ outputs/[YYYY-MM-DD]/[HH-MM-SS]/
 └── [analysis]_*.png     # Plots from analysis scripts
 ```
 
-`src/multirun/` holds Hydra multirun outputs from parameter sweeps.
+`multirun/` holds Hydra multirun outputs from parameter sweeps.

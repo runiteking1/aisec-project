@@ -13,13 +13,13 @@ fi
 CKPT="$(realpath "$1")/checkpoint/model"
 
 echo "=== Robustness analysis (gradient norms + logit margins) ==="
-python -m src.analyze_robustness \
+python -m src.analysis.analyze_robustness \
     checkpoint_path="$CKPT"
 
 echo "=== SAM sharpness analysis ==="
 for rho in 0.001 0.005 0.01; do
     echo "  rho=$rho"
-    python -m src.analyze_sharpness \
+    python -m src.analysis.analyze_sharpness \
         checkpoint_path="$CKPT" \
         rho="$rho"
 done
@@ -27,7 +27,7 @@ done
 echo "=== FGSM adversarial attack ==="
 for epsilon in 0.1 0.05 0.01; do
     echo "  epsilon=$epsilon"
-    python -m src.generate_adversarial \
+    python -m src.attacks.generate_adversarial \
         checkpoint_path="$CKPT" \
         epsilon="$epsilon"
 done
@@ -37,7 +37,7 @@ for pair in "0.1:0.01" "0.05:0.005" "0.01:0.001"; do
     epsilon="${pair%%:*}"
     alpha="${pair##*:}"
     echo "  epsilon=$epsilon alpha=$alpha"
-    python -m src.generate_pgd \
+    python -m src.attacks.generate_pgd \
         checkpoint_path="$CKPT" \
         epsilon="$epsilon" \
         alpha="$alpha"
