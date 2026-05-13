@@ -54,8 +54,13 @@ def _gauss_newton_step(
     grads,
     num_classes: int,
     lam: float,
+    return_ggn: bool = False,
 ):
-    """Replace grads with (GGN + lam*I)^{-1} g (Levenberg-Marquardt step)."""
+    """Replace grads with (GGN + lam*I)^{-1} g (Levenberg-Marquardt step).
+
+    return_ggn=True makes the function return (preconditioned_grads, ggn_matrix)
+    instead of just preconditioned_grads, for testing and debugging.
+    """
     bsz = images.shape[0]
 
     # J: full Jacobian (bsz*num_classes, P)
@@ -73,8 +78,10 @@ def _gauss_newton_step(
 
     g, unravel = jax.flatten_util.ravel_pytree(grads)
     altered = jnp.linalg.solve(ggn + lam * jnp.eye(P), g)
-    return unravel(altered)
 
+    if return_ggn:
+        return unravel(altered), ggn
+    return unravel(altered)
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def train(cfg: DictConfig):
