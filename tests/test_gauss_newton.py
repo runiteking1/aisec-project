@@ -140,6 +140,31 @@ def test_gauss_newton_step_matches_direct_solve(ctx):
         )
 
 
+def test_cg_matches_direct_solve(ctx):
+    """CG solve should produce results close to the direct (dense) solve.
+
+    Uses larger lambda values to keep the system well-conditioned, ensuring
+    CG converges within the iteration budget for this small (P=15) problem.
+    """
+    for lam in (1e-2, 1e-1):
+        result_direct, _ = _gauss_newton_step(
+            ctx['state'], ctx['images'], ctx['logits'],
+            ctx['grads'], ctx['num_classes'], lam=lam,
+            return_ggn=True, solve_method='direct',
+        )
+        result_cg = _gauss_newton_step(
+            ctx['state'], ctx['images'], ctx['logits'],
+            ctx['grads'], ctx['num_classes'], lam=lam,
+            solve_method='cg', cg_steps=200,
+        )
+        direct_flat, _ = jax.flatten_util.ravel_pytree(result_direct)
+        cg_flat, _ = jax.flatten_util.ravel_pytree(result_cg)
+        np.testing.assert_allclose(
+            np.array(cg_flat), np.array(direct_flat), atol=1e-3,
+            err_msg=f"CG vs direct solve mismatch at lambda={lam}",
+        )
+
+
 def test_preconditioned_gradient_is_descent_direction(ctx):
     """(GGN + lambda*I)^{-1} g must satisfy dot(result, g) > 0.
 

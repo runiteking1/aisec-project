@@ -5,3 +5,6 @@ learning_rate: 0.01
 optimizer: gn
 early_stopping: true
 gn_param: 0.01
+gn_solve: direct        # 'direct' or 'cg'
+gn_cg_steps: 150        # max CG iterations (ignored when gn_solve: direct)
+gn_line_search: false   # backtracking Armijo line search

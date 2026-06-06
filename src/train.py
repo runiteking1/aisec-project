@@ -10,6 +10,7 @@ import hydra
 import orbax.checkpoint as ocp
 import logging
 from jax import Array
+from jax.scipy.sparse.linalg import cg as jax_cg
 from omegaconf import DictConfig, OmegaConf
 from flax.training.train_state import TrainState
 
@@ -20,21 +21,24 @@ from src.plotting import plot_training_metrics
 log = logging.getLogger(__name__)
 
 
-@partial(jax.jit, static_argnums=(2,))
+@partial(jax.jit, static_argnums=(2, 4, 5, 6))
 def train_step(
     state: TrainState,
     batch: Tuple[jnp.ndarray, jnp.ndarray],
     num_classes: int,
     gauss_newton: float = None,
+    solve_method: str = 'direct',
+    cg_steps: int = 150,
+    use_line_search: bool = False,
 ) -> Tuple[TrainState, jnp.ndarray, jnp.ndarray]:
     images, labels = batch
 
     def cross_entropy_loss(params, batch):
-        images, labels = batch
-        logits = state.apply_fn({'params': params}, images)
-        one_hot = jax.nn.one_hot(labels, num_classes=num_classes)
-        loss = -jnp.sum(one_hot * jax.nn.log_softmax(logits)) / len(images)
-        accuracy = jnp.mean(jnp.argmax(logits, -1) == labels)
+        imgs, lbls = batch
+        logits = state.apply_fn({'params': params}, imgs)
+        one_hot = jax.nn.one_hot(lbls, num_classes=num_classes)
+        loss = -jnp.sum(one_hot * jax.nn.log_softmax(logits)) / len(imgs)
+        accuracy = jnp.mean(jnp.argmax(logits, -1) == lbls)
         return loss, (logits, accuracy)
 
     (loss, (logits, accuracy)), grads = jax.value_and_grad(
@@ -42,7 +46,33 @@ def train_step(
     )(state.params, batch)
 
     if gauss_newton is not None:
-        grads = _gauss_newton_step(state, images, logits, grads, num_classes, gauss_newton)
+        raw_grads = grads
+        d = _gauss_newton_step(
+            state, images, logits, grads, num_classes, gauss_newton,
+            solve_method=solve_method, cg_steps=cg_steps,
+        )
+        if use_line_search:
+            g_flat, _ = jax.flatten_util.ravel_pytree(raw_grads)
+            d_flat, _ = jax.flatten_util.ravel_pytree(d)
+            g_dot_d = jnp.dot(g_flat, d_flat)
+
+            def ls_cond(carry):
+                alpha, k = carry
+                trial_params = jax.tree.map(lambda p, di: p - alpha * di, state.params, d)
+                trial_logits = state.apply_fn({'params': trial_params}, images)
+                one_hot = jax.nn.one_hot(labels, num_classes)
+                f_new = -jnp.sum(one_hot * jax.nn.log_softmax(trial_logits)) / images.shape[0]
+                return (f_new > loss - 1e-4 * alpha * g_dot_d) & (k < 10)
+
+            def ls_body(carry):
+                alpha, k = carry
+                return alpha * 0.5, k + 1
+
+            alpha, _ = jax.lax.while_loop(ls_cond, ls_body, (jnp.array(1.0), jnp.array(0)))
+            new_params = jax.tree.map(lambda p, di: p - alpha * di, state.params, d)
+            return state.replace(params=new_params, step=state.step + 1), loss, accuracy
+
+        return state.apply_gradients(grads=d), loss, accuracy
 
     return state.apply_gradients(grads=grads), loss, accuracy
 
@@ -55,11 +85,16 @@ def _gauss_newton_step(
     num_classes: int,
     lam: float,
     return_ggn: bool = False,
+    solve_method: str = 'direct',
+    cg_steps: int = 150,
 ):
     """Replace grads with (GGN + lam*I)^{-1} g (Levenberg-Marquardt step).
 
     return_ggn=True makes the function return (preconditioned_grads, ggn_matrix)
     instead of just preconditioned_grads, for testing and debugging.
+
+    solve_method='cg' uses conjugate gradients (jax.scipy.sparse.linalg.cg)
+    instead of a dense direct solve, which can scale better to larger models.
     """
     bsz = images.shape[0]
 
@@ -80,7 +115,11 @@ def _gauss_newton_step(
     ggn = jnp.einsum('bni,bnm,bmj->ij', J_split, h_blocks, J_split) / bsz
 
     g, unravel = jax.flatten_util.ravel_pytree(grads)
-    altered = jnp.linalg.solve(ggn + lam * jnp.eye(P), g)
+    A = ggn + lam * jnp.eye(P)
+    if solve_method == 'cg':
+        altered, _ = jax_cg(lambda v: A @ v, g, maxiter=cg_steps, tol=1e-6)
+    else:
+        altered = jnp.linalg.solve(A, g)
 
     if return_ggn:
         return unravel(altered), ggn
@@ -114,6 +153,9 @@ def train(cfg: DictConfig):
         )
 
     gn_param = None
+    gn_solve = 'direct'
+    gn_cg_steps = 150
+    gn_line_search = False
     if cfg.training.optimizer == 'adam':
         optimizer = optax.adam(learning_rate=cfg.training.learning_rate)
     elif cfg.training.optimizer == 'sgd':
@@ -121,6 +163,9 @@ def train(cfg: DictConfig):
     elif cfg.training.optimizer == 'gn':
         optimizer = optax.sgd(learning_rate=cfg.training.learning_rate)
         gn_param = cfg.training.gn_param
+        gn_solve = getattr(cfg.training, 'gn_solve', 'direct')
+        gn_cg_steps = getattr(cfg.training, 'gn_cg_steps', 150)
+        gn_line_search = getattr(cfg.training, 'gn_line_search', False)
     else:
         raise ValueError(f"Unknown optimizer: {cfg.training.optimizer}.")
 
@@ -161,7 +206,13 @@ def train(cfg: DictConfig):
         for i in range(0, num_train, batch_size):
             batch = (train_ds['image'][indices[i:i + batch_size]],
                      train_ds['label'][indices[i:i + batch_size]])
-            state, loss, accuracy = train_step(state, batch, cfg.data.num_classes, gauss_newton=gn_param)
+            state, loss, accuracy = train_step(
+                state, batch, cfg.data.num_classes,
+                gauss_newton=gn_param,
+                solve_method=gn_solve,
+                cg_steps=gn_cg_steps,
+                use_line_search=gn_line_search,
+            )
             all_batch_losses.append(loss)
             all_batch_accuracies.append(accuracy)
             epoch_loss += loss
