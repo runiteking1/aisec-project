@@ -70,11 +70,14 @@ def _gauss_newton_step(
     J = jnp.concatenate(reshaped, axis=-1).reshape(bsz * num_classes, -1)
     P = J.shape[1]
 
-    # GGN = sum_i J_i^T H_i J_i,  H_i = diag(p_i) - p_i p_i^T
+    # GGN of the MEAN loss = (1/bsz) sum_i J_i^T H_i J_i,  H_i = diag(p_i) - p_i p_i^T.
+    # The 1/bsz keeps the GGN at the same (mean) scale as the gradient `grads`
+    # below, which is the gradient of the mean cross-entropy loss. Without it the
+    # damping `lam` and the effective step size would both depend on batch size.
     probs = jax.nn.softmax(logits, axis=-1)
     h_blocks = jax.vmap(lambda p: jnp.diag(p) - jnp.outer(p, p))(probs)
     J_split = J.reshape(bsz, num_classes, P)
-    ggn = jnp.einsum('bni,bnm,bmj->ij', J_split, h_blocks, J_split)
+    ggn = jnp.einsum('bni,bnm,bmj->ij', J_split, h_blocks, J_split) / bsz
 
     g, unravel = jax.flatten_util.ravel_pytree(grads)
     altered = jnp.linalg.solve(ggn + lam * jnp.eye(P), g)
@@ -124,7 +127,7 @@ def train(cfg: DictConfig):
     if cfg.data.name == 'cifar10':
         datasets = get_cifar10_datasets(cfg.data.num_classes)
     elif cfg.data.name == 'mnist':
-        datasets = get_datasets(cfg.data.poison)
+        datasets = get_datasets(cfg.data.poison, cfg.seed)
     else:
         raise ValueError(f"Unknown dataset: {cfg.data.name}.")
 

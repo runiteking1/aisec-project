@@ -10,7 +10,6 @@ import orbax.checkpoint as ocp
 from flax.training.train_state import TrainState
 from omegaconf import DictConfig, OmegaConf
 from tqdm import trange
-from jax.tree_util import tree_map
 
 from src.models import CNN
 from src.data import get_datasets
@@ -18,52 +17,44 @@ from src.data import get_datasets
 log = logging.getLogger(__name__)
 
 
-# analyze_sharpness.py (Corrected function)
 def calculate_sam_loss_increase(
         state: TrainState,
         images: jnp.ndarray,
         labels: jnp.ndarray,
         rho: float
 ) -> jnp.ndarray:
+    """Per-example SAM-style loss increase.
+
+    For each example i, computes its own gradient-ascent direction
+    epsilon_i = rho * grad_theta(ell_i) / ||grad_theta(ell_i)||
+    and returns ell_i(theta + epsilon_i) - ell_i(theta).
+
+    This produces a genuine per-example distribution (10k distinct values
+    over the MNIST test set), unlike a batch-mean version which yields only
+    one value per batch.
     """
-    Calculates the SAM-style loss increase for a batch of images and labels.
-    """
+    apply_fn = state.apply_fn
+    params = state.params
 
-    # Define a single loss function for the entire batch
-    def batch_loss_fn(params, batch_images, batch_labels):
-        logits = state.apply_fn({'params': params}, batch_images)
-        loss = optax.softmax_cross_entropy_with_integer_labels(
-            logits=logits, labels=batch_labels
-        ).mean()
-        return loss
+    def per_example_loss(p, img, label):
+        logit = apply_fn({'params': p}, jnp.expand_dims(img, 0))
+        return optax.softmax_cross_entropy_with_integer_labels(
+            logit, jnp.array([label])
+        ).squeeze()
 
-    # 1. Get the gradient of the mean batch loss with respect to the model parameters
-    grad_fn = jax.grad(batch_loss_fn)
-    grads = grad_fn(state.params, images, labels)
+    def per_example_increase(img, label):
+        loss0 = per_example_loss(params, img, label)
+        grad = jax.grad(per_example_loss)(params, img, label)
+        grad_norm = jnp.sqrt(
+            sum(jnp.sum(g ** 2) for g in jax.tree_util.tree_leaves(grad))
+        )
+        perturbed = jax.tree_util.tree_map(
+            lambda p, g: p + rho * g / (grad_norm + 1e-12), params, grad
+        )
+        loss1 = per_example_loss(perturbed, img, label)
+        return loss1 - loss0
 
-    # 2. Compute the perturbation direction and scale it by rho
-    def perturb_params(params, grads, rho):
-        # Calculate the L2 norm of the gradient tree
-        grad_norm = jnp.sqrt(sum(jnp.sum(g ** 2) for g in jax.tree_util.tree_leaves(grads)))
-
-        # Add a small epsilon for stability
-        epsilon_hat = tree_map(lambda g: g / (grad_norm + 1e-12), grads)
-
-        # Perturb the parameters
-        return tree_map(lambda p, g: p + rho * g, params, epsilon_hat)
-
-    perturbed_params = perturb_params(state.params, grads, rho)
-
-    # 3. Calculate the loss at the original and perturbed parameters
-    original_loss = batch_loss_fn(state.params, images, labels)
-    perturbed_loss = batch_loss_fn(perturbed_params, images, labels)
-
-    # The loss increase is the difference
-    loss_increase = perturbed_loss - original_loss
-
-    # Return a batch-sized array to match the plotting function's expectations.
-    # Note: For simplicity, we'll repeat the single loss increase value for the batch.
-    return jnp.full(images.shape[0], loss_increase)
+    return jax.vmap(per_example_increase)(images, labels)
 
 def plot_distribution(data, title, xlabel, output_dir, filename):
     """

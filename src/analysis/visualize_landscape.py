@@ -123,10 +123,17 @@ def visualize_landscape(cfg: DictConfig) -> None:
     for ax, state, name in zip(axes,
                                 [state_a, state_b],
                                 [cfg.label_a, cfg.label_b]):
-        # Sample two independent Gaussian directions, then filter-normalize
-        key, k1, k2 = jax.random.split(key, 3)
-        dir1 = jax.tree_util.tree_map(lambda p: jax.random.normal(k1, p.shape), state.params)
-        dir2 = jax.tree_util.tree_map(lambda p: jax.random.normal(k2, p.shape), state.params)
+        # Sample two independent Gaussian directions, then filter-normalize.
+        # Split a unique key per leaf so same-shaped leaves get distinct noise.
+        leaves, treedef = jax.tree_util.tree_flatten(state.params)
+        n = len(leaves)
+        key, *leaf_keys = jax.random.split(key, 2 * n + 1)
+        dir1 = treedef.unflatten(
+            [jax.random.normal(leaf_keys[i], l.shape) for i, l in enumerate(leaves)]
+        )
+        dir2 = treedef.unflatten(
+            [jax.random.normal(leaf_keys[n + i], l.shape) for i, l in enumerate(leaves)]
+        )
         dir1 = filter_normalize(dir1, state.params)
         dir2 = filter_normalize(dir2, state.params)
 

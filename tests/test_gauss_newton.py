@@ -4,8 +4,9 @@ Tests for the Generalized Gauss-Newton (GGN) optimizer in src/train.py.
 The GGN computation (train_step with gauss_newton != None) does:
   1. Compute J: per-sample Jacobian of model outputs w.r.t. all params,
      flattened and reshaped to (bsz * num_classes, P).
-  2. Build GGN = sum_i J_i^T H_i J_i, where H_i = diag(p_i) - p_i p_i^T
-     is the per-sample softmax Hessian.
+  2. Build GGN = (1/bsz) sum_i J_i^T H_i J_i, where H_i = diag(p_i) - p_i p_i^T
+     is the per-sample softmax Hessian. The 1/bsz keeps the GGN at the same
+     (mean) scale as the gradient of the mean cross-entropy loss.
   3. Solve (GGN + lambda*I) x = g and use x as the preconditioned gradient.
 """
 
@@ -93,8 +94,8 @@ def test_ggn_is_psd(ctx):
 def test_ggn_equals_hessian_for_linear_model(ctx):
     """For a linear model, the GGN is the exact Hessian of the cross-entropy loss.
 
-    GGN is computed as a sum over the batch; the Hessian is of the mean loss,
-    so we compare ggn / bsz against jax.hessian of the mean loss.
+    The GGN is now normalized by the batch size to match the gradient of the
+    mean loss, so it compares directly against jax.hessian of the mean loss.
     """
     model, params, images, labels, num_classes, bsz = (
         ctx['model'], ctx['params'], ctx['images'], ctx['labels'],
@@ -113,7 +114,7 @@ def test_ggn_equals_hessian_for_linear_model(ctx):
         ctx['state'], images, ctx['logits'],
         ctx['grads'], num_classes, lam=0.01, return_ggn=True,
     )
-    np.testing.assert_allclose(np.array(ggn / bsz), np.array(hessian), atol=1e-4)
+    np.testing.assert_allclose(np.array(ggn), np.array(hessian), atol=1e-4)
 
 
 def test_gauss_newton_step_matches_direct_solve(ctx):

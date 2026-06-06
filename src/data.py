@@ -1,14 +1,14 @@
 import logging
 import os
-from random import choices
 
+import numpy as np
 import jax.numpy as jnp
 from datasets import load_dataset
 
 log = logging.getLogger(__name__)
 
 
-def get_datasets(poison_rate: float = 0.0):
+def get_datasets(poison_rate: float = 0.0, seed: int = 0):
     processed_train_path = 'processed_mnist_train.npy'
     processed_test_path = 'processed_mnist_test.npy'
 
@@ -41,13 +41,14 @@ def get_datasets(poison_rate: float = 0.0):
 
     num_to_poison = int(len(train_data['label']) * poison_rate)
     if num_to_poison > 0:
-        log.info(f"Poisoning {num_to_poison} ({poison_rate:.2%}) training labels...")
-        indices_to_poison = choices(range(len(train_data['label'])), k=num_to_poison)
-        for idx in indices_to_poison:
-            original_label = train_data['label'][idx]
-            all_labels = list(range(10))
-            all_labels.remove(original_label)
-            train_data['label'] = train_data['label'].at[idx].set(choices(all_labels, k=1)[0])
+        log.info(f"Poisoning {num_to_poison} ({poison_rate:.2%}) training labels (seed={seed})...")
+        rng = np.random.default_rng(seed)
+        indices_to_poison = rng.choice(len(train_data['label']), size=num_to_poison, replace=False)
+        wrong_offsets = rng.integers(1, 10, size=num_to_poison)
+        for idx, offset in zip(indices_to_poison, wrong_offsets):
+            original_label = int(train_data['label'][idx])
+            wrong_label = (original_label + int(offset)) % 10
+            train_data['label'] = train_data['label'].at[idx].set(wrong_label)
 
     return {'train': train_data, 'test': test_data}
 
